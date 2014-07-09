@@ -16,7 +16,11 @@
         "nodes": {
             "mqttssl": "mqttssl.js"
         }
-    }
+    },
+	"directories" : {
+		"lib" : "lib",
+		"icons": "icons"
+	}
 	 "author": {
         "name": "Rayner Vintervoll",
         "email": "raynerv@gmail.com"
