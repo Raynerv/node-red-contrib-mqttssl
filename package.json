@@ -1,8 +1,7 @@
 {
     "name"         : "node-red-contrib-mqttssl",
     "version"      : "0.0.1",
-    "description"  : "Based on node-red-node-mqtt. Contains in/out nodes that
-		connect to brokers that allow unrestricted connections (clients do not need to supply the client certificates) using certificate based SSL/TLS encryption.",
+    "description"  : "Based on node-red-node-mqtt. Contains in/out nodes that connect to brokers that allow unrestricted connections (clients do not need to supply the client certificates) using certificate based SSL/TLS encryption.",
     "dependencies": {
 		"mqtt": "0.3.x"
     },
@@ -16,7 +15,11 @@
         "nodes": {
             "mqttssl": "mqttssl.js"
         }
-    }
+    },
+	"directories" : {
+		"lib" : "lib",
+		"icons": "icons"
+	},
 	 "author": {
         "name": "Rayner Vintervoll",
         "email": "raynerv@gmail.com"
