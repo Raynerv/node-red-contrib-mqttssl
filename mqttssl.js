@@ -135,6 +135,9 @@ module.exports = function(RED) {
             this.client.on("connectionlost",function() {
                 node.status({fill:"red",shape:"ring",text:"disconnected"});
             });
+			this.client.on("error",function() {
+                node.status({fill:"red",shape:"ring",text:"error"});
+            });
             this.client.on("connect",function() {
                 node.status({fill:"green",shape:"dot",text:"connected"});
             });
