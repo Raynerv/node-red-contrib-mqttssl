@@ -6,10 +6,19 @@
     "dependencies": {
 		"mqtt": "0.3.x"
     },
+	"license": "Apache",
+	"repository" : {
+        "type":"git",
+        "url":"https://github.com/Raynerv/node-red-contrib-mqttssl.git"
+    },
     "keywords": [ "node-red", "mqtt", "ssl", "tls" ],
     "node-red"     : {
         "nodes": {
             "mqttssl": "mqttssl.js"
         }
+    }
+	 "author": {
+        "name": "Rayner Vintervoll",
+        "email": "raynerv@gmail.com"
     }
 }
