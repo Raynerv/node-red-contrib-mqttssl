@@ -15,4 +15,7 @@ Run the following command in the root directory of your Node-RED install
 Usage
 -----
 
-tbd
+In the node-red package.json add a dependency to
+"node-red-contrib-mqttssl":"latest"
+
+Usage is documented in the node's information panel.
