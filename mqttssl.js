@@ -95,6 +95,10 @@ module.exports = function(RED) {
             this.client.on("connect",function() {
                 node.status({fill:"green",shape:"dot",text:"connected"});
             });
+            this.client.on("error",function() {
+                node.status({fill:"red",shape:"ring",text:"error"});
+                node.error(error);
+            });
             this.client.connect();
         } else {
             this.error("missing broker configuration");
@@ -137,6 +141,7 @@ module.exports = function(RED) {
             });
 			this.client.on("error",function() {
                 node.status({fill:"red",shape:"ring",text:"error"});
+                node.error(error);
             });
             this.client.on("connect",function() {
                 node.status({fill:"green",shape:"dot",text:"connected"});
