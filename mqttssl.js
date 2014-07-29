@@ -95,7 +95,7 @@ module.exports = function(RED) {
             this.client.on("connect",function() {
                 node.status({fill:"green",shape:"dot",text:"connected"});
             });
-            this.client.on("error",function() {
+            this.client.on("error",function(error) {
                 node.status({fill:"red",shape:"ring",text:"error"});
                 node.error(error);
             });
@@ -139,7 +139,7 @@ module.exports = function(RED) {
             this.client.on("connectionlost",function() {
                 node.status({fill:"red",shape:"ring",text:"disconnected"});
             });
-			this.client.on("error",function() {
+			this.client.on("error",function(error) {
                 node.status({fill:"red",shape:"ring",text:"error"});
                 node.error(error);
             });
