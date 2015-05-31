@@ -1,163 +1,140 @@
-/**
- * Copyright 2013 IBM Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
+<!--
+  Copyright 2013 IBM Corp.
 
-module.exports = function(RED) {
-    "use strict";
-    var clientPool = require("./lib/mqttClientPool");
-    var util = require("util");
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-    function MQTTBrokerNode(n) {
-        RED.nodes.createNode(this,n);
-        this.broker = n.broker;
-        this.port = n.port;
-        this.clientid = n.clientid;
-        var credentials = RED.nodes.getCredentials(n.id);
-        if (credentials) {
-            this.username = credentials.user;
-            this.password = credentials.password;
-        }
-    }
-    RED.nodes.registerType("mqttssl-broker",MQTTBrokerNode);
+  http://www.apache.org/licenses/LICENSE-2.0
 
-    var querystring = require('querystring');
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
 
-    RED.httpAdmin.get('/mqttssl-broker/:id',function(req,res) {
-        var credentials = RED.nodes.getCredentials(req.params.id);
-        if (credentials) {
-            res.send(JSON.stringify({user:credentials.user,hasPassword:(credentials.password&&credentials.password!="")}));
-        } else {
-            res.send(JSON.stringify({}));
+<script type="text/x-red" data-template-name="mqttssl in">
+    <div class="form-row">
+        <label for="node-input-broker"><i class="icon-tag"></i> Broker</label>
+        <input type="text" id="node-input-broker">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="icon-tasks"></i> Topic</label>
+        <input type="text" id="node-input-topic" placeholder="Topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="mqttssl in">
+    <p>MQTT SSL input node. Connects to a broker that allows unrestricted connections (clients do not need to supply the client certificates) using certificate based SSL/TLS encryption, and subscribes to the specified topic. The topic may contain MQTT wildcards.</p>
+    <p>Outputs an object called <b>msg</b> containing <b>msg.topic, msg.payload, msg.qos</b> and <b>msg.retain</b>.</p>
+    <p><b>msg.payload</b> is a String.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('mqttssl in',{
+        category: 'input',
+        defaults: {
+            name: {value:""},
+            topic: {value:"",required:true},
+            broker: {type:"mqttssl-broker", required:true},			
+        },
+        color:"#ECC3BF",
+        inputs:0,
+        outputs:1,
+        icon: "bridgelocked.png",
+        label: function() {
+            return this.name||this.topic||"mqttssl";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
         }
     });
+</script>
 
-    RED.httpAdmin.delete('/mqttssl-broker/:id',function(req,res) {
-        RED.nodes.deleteCredentials(req.params.id);
-        res.send(200);
+<script type="text/x-red" data-template-name="mqttssl out">
+    <div class="form-row">
+        <label for="node-input-broker"><i class="icon-tag"></i> Broker</label>
+        <input type="text" id="node-input-broker">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="icon-tasks"></i> Topic</label>
+        <input type="text" id="node-input-topic" placeholder="Topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="mqtt out">
+    <p>Connects to a broker that allows unrestricted connections (clients do not need to supply the client certificates) using certificate based SSL/TLS encryption, and publishes <b>msg.payload</b> either to the <b>msg.topic</b> OR to the topic specified in the edit window. The value in the edit window has precedence.</p>
+    <p><b>msg.qos</b> and <b>msg.retain</b> may also optionally have been set. If not set they are set to 0 and false respectively.</p>
+    <p>If <b>msg.payload</b> contains a buffer or an object it will be stringified before being sent.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('mqttssl out',{
+        category: 'output',
+        defaults: {
+            name: {value:""},
+            topic: {value:""},
+            broker: {type:"mqttssl-broker", required:true},			
+        },
+        color:"#ECC3BF",
+        inputs:1,
+        outputs:0,
+        icon: "bridgelocked.png",
+        align: "right",
+        label: function() {
+            return this.name||this.topic||"mqttssl";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
     });
+</script>
 
-    RED.httpAdmin.post('/mqttssl-broker/:id',function(req,res) {
-        var body = "";
-        req.on('data', function(chunk) {
-            body+=chunk;
-        });
-        req.on('end', function(){
-            var newCreds = querystring.parse(body);
-            var credentials = RED.nodes.getCredentials(req.params.id)||{};
-            if (newCreds.user == null || newCreds.user == "") {
-                delete credentials.user;
-            } else {
-                credentials.user = newCreds.user;
-            }
-            if (newCreds.password == "") {
-                delete credentials.password;
-            } else {
-                credentials.password = newCreds.password||credentials.password;
-            }
-            RED.nodes.addCredentials(req.params.id,credentials);
-            res.send(200);
-        });
+<script type="text/x-red" data-template-name="mqttssl-broker">
+    <div class="form-row node-input-sslbroker">
+        <label for="node-config-input-sslbroker"><i class="icon-bookmark"></i> Broker</label>
+        <input class="input-append-left" type="text" id="node-config-input-broker" placeholder="localhost" style="width: 40%;" >
+        <label for="node-config-input-port" style="margin-left: 10px; width: 35px; "> Port</label>
+        <input type="text" id="node-config-input-port" placeholder="Port" style="width:45px">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-clientid"><i class="icon-tag"></i> Client ID</label>
+        <input type="text" id="node-config-input-clientid" placeholder="Leave blank for auto generated">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-user"><i class="icon-user"></i> Username</label>
+        <input type="text" id="node-config-input-user">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-password"><i class="icon-lock"></i> Password</label>
+        <input type="password" id="node-config-input-password">
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('mqttssl-broker',{
+        category: 'config',
+        defaults: {
+            broker: {value:"",required:true},
+            port: {value:8883,required:true,validate:RED.validators.number()},
+            clientid: { value:"" }
+        },
+        credentials: {
+            user: {type:"text"},
+            password: {type: "password"}
+        },
+        label: function() {
+            if (this.broker == "") { this.broker = "localhost"; }
+            return (this.clientid?this.clientid+"@":"")+this.broker+":"+this.port;
+        }
     });
-
-
-    function MQTTInNode(n) {
-        RED.nodes.createNode(this,n);
-        this.topic = n.topic;
-        this.broker = n.broker;
-        this.brokerConfig = RED.nodes.getNode(this.broker);
-        var node = this;
-        if (this.brokerConfig) {
-            this.status({fill:"red",shape:"ring",text:"disconnected"});
-            this.client = clientPool.get(this.brokerConfig.broker,this.brokerConfig.port,this.brokerConfig.clientid,this.brokerConfig.username,this.brokerConfig.password);
-            var node = this;
-            this.client.subscribe(this.topic,2,function(topic,payload,pub) {					
-                    var msg = {topic:topic,payload:payload,qos:pub.qos,retain:pub.retain};
-                    if ((node.brokerConfig.broker == "localhost")||(node.brokerConfig.broker == "127.0.0.1")) {
-                        msg._topic = topic;
-                    }
-                    node.send(msg);
-            });
-            this.client.on("connectionlost",function() {
-                node.status({fill:"red",shape:"ring",text:"disconnected"});
-            });
-            this.client.on("connect",function() {
-                node.status({fill:"green",shape:"dot",text:"connected"});
-            });
-            this.client.on("error",function(error) {
-                node.status({fill:"red",shape:"ring",text:"error"});
-                node.error(error);
-            });
-            this.client.connect();
-        } else {
-            this.error("missing broker configuration");
-        }
-    }
-
-    RED.nodes.registerType("mqttssl in",MQTTInNode);
-
-    MQTTInNode.prototype.close = function() {
-        if (this.client) {
-            this.client.disconnect();
-        }
-    }
-
-
-    function MQTTOutNode(n) {
-        RED.nodes.createNode(this,n);
-
-        this.topic = n.topic;
-        this.broker = n.broker;
-
-        this.brokerConfig = RED.nodes.getNode(this.broker);
-        var node = this;
-
-        if (this.brokerConfig) {
-            this.status({fill:"red",shape:"ring",text:"disconnected"},true);
-            this.client = clientPool.get(this.brokerConfig.broker,this.brokerConfig.port,this.brokerConfig.clientid,this.brokerConfig.username,this.brokerConfig.password);
-            this.on("input",function(msg) {
-                if (msg != null) {
-                    if (this.topic) {
-                        msg.topic = this.topic;
-                    }
-                    this.client.publish(msg, function(err) {
-						//node.status({fill:"red",shape:"ring",text:"failed to publish"});
-					});
-                }
-            });
-            this.client.on("connectionlost",function() {
-                node.status({fill:"red",shape:"ring",text:"disconnected"});
-            });
-			this.client.on("error",function(error) {
-                node.status({fill:"red",shape:"ring",text:"error"});
-                node.error(error);
-            });
-            this.client.on("connect",function() {
-                node.status({fill:"green",shape:"dot",text:"connected"});
-            });
-
-            this.client.connect();
-        } else {
-            this.error("missing broker configuration");
-        }
-    }
-
-    RED.nodes.registerType("mqttssl out",MQTTOutNode);
-
-    MQTTOutNode.prototype.close = function() {
-        if (this.client) {
-            this.client.disconnect();
-        }
-    }
-}
+</script>
