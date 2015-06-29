@@ -47,11 +47,11 @@ module.exports = function(RED) {
             this.client = clientPool.get(this.brokerConfig.broker,this.brokerConfig.port,this.brokerConfig.clientid,this.brokerConfig.username,this.brokerConfig.password);
             var node = this;
             this.client.subscribe(this.topic,2,function(topic,payload,pub) {					
-                    var msg = {topic:topic,payload:payload,qos:pub.qos,retain:pub.retain};
-                    if ((node.brokerConfig.broker == "localhost")||(node.brokerConfig.broker == "127.0.0.1")) {
-                        msg._topic = topic;
-                    }
-                    node.send(msg);
+                var msg = {topic:topic,payload:payload,qos:pub.qos,retain:pub.retain};
+                if ((node.brokerConfig.broker == "localhost")||(node.brokerConfig.broker == "127.0.0.1")) {
+                    msg._topic = topic;
+                }
+                node.send(msg);
             });
             this.client.on("connectionlost",function() {
                 node.status({fill:"red",shape:"ring",text:"disconnected"});
@@ -82,6 +82,8 @@ module.exports = function(RED) {
         RED.nodes.createNode(this,n);
 
         this.topic = n.topic;
+        this.qos = n.qos || null;
+        this.retain = n.retain;
         this.broker = n.broker;
 
         this.brokerConfig = RED.nodes.getNode(this.broker);
@@ -92,18 +94,30 @@ module.exports = function(RED) {
             this.client = clientPool.get(this.brokerConfig.broker,this.brokerConfig.port,this.brokerConfig.clientid,this.brokerConfig.username,this.brokerConfig.password);
             this.on("input",function(msg) {
                 if (msg != null) {
+                    if (msg.qos) {
+                        msg.qos = parseInt(msg.qos);
+                        if ((msg.qos !== 0) && (msg.qos !== 1) && (msg.qos !== 2)) {
+                            msg.qos = null;
+                        }
+                    }
+                    msg.qos = Number(msg.qos || node.qos || 0);
+                    msg.retain = msg.retain || node.retain || false;
+                    msg.retain = ((msg.retain === true) || (msg.retain === "true")) || false;
                     if (this.topic) {
                         msg.topic = this.topic;
                     }
-                    this.client.publish(msg, function(err) {
-						//node.status({fill:"red",shape:"ring",text:"failed to publish"});
-					});
+                    if ( msg.hasOwnProperty("payload")) {
+                        if (msg.hasOwnProperty("topic") && (typeof msg.topic === "string") && (msg.topic !== "")) { // topic must exist
+                            this.client.publish(msg);  // send the message
+                    } else {
+                        node.warn("Invalid topic specified"); }
+                    }
                 }
             });
             this.client.on("connectionlost",function() {
                 node.status({fill:"red",shape:"ring",text:"disconnected"});
             });
-			this.client.on("error",function(error) {
+            this.client.on("error",function(error) {
                 node.status({fill:"red",shape:"ring",text:"error"});
                 node.error(error);
             });
